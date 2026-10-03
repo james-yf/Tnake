@@ -1,4 +1,8 @@
-# Tnake 
+<p align="center">
+  <img src="/img/logo.png" alt="Tnake Logo" width="120" height="120">
+</p>
+
+<h1 align="center">Tnake</h1>
 
 ## What will it be?
 A snake game using **React** for the frontend and a **Rust** backend (via **Tauri**) (_hence the T in the repo name_).
