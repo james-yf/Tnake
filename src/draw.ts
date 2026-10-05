@@ -1,3 +1,5 @@
+import { Point } from "./point";
+
 export const drawGrid = (
   ctx: CanvasRenderingContext2D,
   rows: number,
@@ -12,4 +14,16 @@ export const drawGrid = (
       ctx.fillRect(c * size, r * size, size, size);
     }
   }
+};
+
+export const drawSnake = (
+  ctx: CanvasRenderingContext2D,
+  size: number,
+  snake: Point[],
+  color: string,
+) => {
+  snake.map((p) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(p.x * size, p.y * size, size, size);
+  });
 };
