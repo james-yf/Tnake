@@ -27,3 +27,13 @@ export const drawSnake = (
     ctx.fillRect(p.x * size, p.y * size, size, size);
   });
 };
+
+export const drawApple = (
+  ctx: CanvasRenderingContext2D,
+  size: number,
+  apple: Point,
+  color: string,
+) => {
+  ctx.fillStyle = color;
+  ctx.fillRect(apple.x * size, apple.y * size, size, size);
+};

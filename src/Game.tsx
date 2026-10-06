@@ -1,7 +1,7 @@
 import { useRef, useEffect, useReducer } from "react";
 import { Point } from "./point";
 import { Dir, keyToDir, oppositeDir, dirToOffset } from "./directions";
-import { drawGrid, drawSnake } from "./draw";
+import { drawApple, drawGrid, drawSnake } from "./draw";
 
 type GameProps = {
   rows: number;
@@ -20,21 +20,34 @@ const hitsWall = (head: Point, rows: number, cols: number) => {
   return head.x < 0 || head.x >= cols || head.y < 0 || head.y >= rows;
 };
 
+const snakeExistsAt = (p: Point, snake: Point[]) => {
+  return snake.some((s) => s.x === p.x && s.y === p.y);
+};
+
+const spawnApple = (snake: Point[], rows: number, cols: number): Point => {
+  while (true) {
+    const p = getRandPoint(rows, cols);
+    if (!snakeExistsAt(p, snake)) return p;
+  }
+};
+
 interface GameState {
   snake: Point[];
   dir: Dir | null;
+  apple: Point | null;
   gameOver: boolean;
 }
 
 type GameAction =
   | { type: "TICK"; rows: number; cols: number }
-  | { type: "CHANGE_DIR"; dir: Dir }
+  | { type: "CHANGE_DIR"; dir: Dir; rows: number; cols: number }
   | { type: "RESTART"; rows: number; cols: number };
 
 const initialState = (rows: number, cols: number): GameState => {
   return {
     snake: [getRandPoint(rows, cols)],
     dir: null,
+    apple: null,
     gameOver: false,
   };
 };
@@ -61,7 +74,13 @@ function reducer(state: GameState, action: GameAction): GameState {
 
     case "CHANGE_DIR": {
       const currDir = state.dir;
-      if (!currDir) return { ...state, dir: action.dir };
+      if (!currDir) {
+        return {
+          ...state,
+          dir: action.dir,
+          apple: spawnApple(state.snake, action.rows, action.cols),
+        };
+      }
       if (action.dir === oppositeDir[currDir]) return state;
       return { ...state, dir: action.dir };
     }
@@ -79,13 +98,15 @@ function Game({ rows, cols, size }: GameProps) {
     if (!ctx) return;
     drawGrid(ctx, rows, cols, size, "#14532d", "#166534");
     drawSnake(ctx, size, state.snake, "blue");
-  }, [state.snake, rows, cols, size]);
+    if (!state.apple) return;
+    drawApple(ctx, size, state.apple, "red");
+  }, [state.snake, state.apple, rows, cols, size]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "r") dispatch({ type: "RESTART", rows, cols });
       const nextDir = keyToDir[e.key];
-      if (nextDir) dispatch({ type: "CHANGE_DIR", dir: nextDir });
+      if (nextDir) dispatch({ type: "CHANGE_DIR", dir: nextDir, rows, cols });
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
