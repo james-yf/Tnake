@@ -28,9 +28,19 @@ interface GameState {
 
 type GameAction =
   | { type: "TICK"; rows: number; cols: number }
-  | { type: "CHANGE_DIR"; dir: Dir };
+  | { type: "CHANGE_DIR"; dir: Dir }
+  | { type: "RESTART"; rows: number; cols: number };
+
+const initialState = (rows: number, cols: number): GameState => {
+  return {
+    snake: [getRandPoint(rows, cols)],
+    dir: null,
+    gameOver: false,
+  };
+};
 
 function reducer(state: GameState, action: GameAction): GameState {
+  if (action.type === "RESTART") return initialState(action.rows, action.cols);
   if (state.gameOver) return state;
 
   switch (action.type) {
@@ -60,11 +70,9 @@ function reducer(state: GameState, action: GameAction): GameState {
 
 function Game({ rows, cols, size }: GameProps) {
   const gridRef = useRef<HTMLCanvasElement>(null);
-  const [state, dispatch] = useReducer(reducer, undefined, () => ({
-    snake: [getRandPoint(rows, cols)],
-    dir: null,
-    gameOver: false,
-  }));
+  const [state, dispatch] = useReducer(reducer, undefined, () =>
+    initialState(rows, cols),
+  );
 
   useEffect(() => {
     const ctx = gridRef.current?.getContext("2d");
@@ -75,12 +83,13 @@ function Game({ rows, cols, size }: GameProps) {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "r") dispatch({ type: "RESTART", rows, cols });
       const nextDir = keyToDir[e.key];
       if (nextDir) dispatch({ type: "CHANGE_DIR", dir: nextDir });
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [rows, cols]);
 
   useEffect(() => {
     if (state.gameOver) return;
@@ -93,7 +102,7 @@ function Game({ rows, cols, size }: GameProps) {
 
   return (
     <div className="relative" style={{ width, height }}>
-      <canvas ref={gridRef} width={cols * size} height={rows * size}></canvas>
+      <canvas ref={gridRef} width={width} height={height}></canvas>
       {state.gameOver && (
         <div className="flex absolute inset-0 bg-black/70 justify-center items-center text-white text-2xl">
           <p>Game Over...</p>
