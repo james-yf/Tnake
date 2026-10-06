@@ -23,6 +23,7 @@ const hitsWall = (head: Point, rows: number, cols: number) => {
 interface GameState {
   snake: Point[];
   dir: Dir | null;
+  gameOver: boolean;
 }
 
 type GameAction =
@@ -30,6 +31,8 @@ type GameAction =
   | { type: "CHANGE_DIR"; dir: Dir };
 
 function reducer(state: GameState, action: GameAction): GameState {
+  if (state.gameOver) return state;
+
   switch (action.type) {
     case "TICK": {
       const currDir = state.dir;
@@ -39,18 +42,16 @@ function reducer(state: GameState, action: GameAction): GameState {
       const offset = dirToOffset[currDir];
       const newHead = { x: currHead.x + offset.x, y: currHead.y + offset.y };
 
-      if (hitsWall(newHead, action.rows, action.cols)) return state;
+      if (hitsWall(newHead, action.rows, action.cols)) {
+        return { ...state, gameOver: true };
+      }
 
       return { ...state, snake: [...state.snake.slice(1), newHead] };
     }
 
     case "CHANGE_DIR": {
       const currDir = state.dir;
-      if (!currDir)
-        return {
-          ...state,
-          dir: action.dir,
-        };
+      if (!currDir) return { ...state, dir: action.dir };
       if (action.dir === oppositeDir[currDir]) return state;
       return { ...state, dir: action.dir };
     }
@@ -62,6 +63,7 @@ function Game({ rows, cols, size }: GameProps) {
   const [state, dispatch] = useReducer(reducer, undefined, () => ({
     snake: [getRandPoint(rows, cols)],
     dir: null,
+    gameOver: false,
   }));
 
   useEffect(() => {
@@ -81,12 +83,23 @@ function Game({ rows, cols, size }: GameProps) {
   }, []);
 
   useEffect(() => {
+    if (state.gameOver) return;
     const id = setInterval(() => dispatch({ type: "TICK", rows, cols }), 150);
     return () => clearInterval(id);
-  }, [rows, cols]);
+  }, [rows, cols, state.gameOver]);
+
+  const width = cols * size;
+  const height = rows * size;
 
   return (
-    <canvas ref={gridRef} width={cols * size} height={rows * size}></canvas>
+    <div className="relative" style={{ width, height }}>
+      <canvas ref={gridRef} width={cols * size} height={rows * size}></canvas>
+      {state.gameOver && (
+        <div className="flex absolute inset-0 bg-black/70 justify-center items-center text-white text-2xl">
+          <p>Game Over...</p>
+        </div>
+      )}
+    </div>
   );
 }
 
