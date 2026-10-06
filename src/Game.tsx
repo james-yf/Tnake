@@ -69,6 +69,15 @@ function reducer(state: GameState, action: GameAction): GameState {
         return { ...state, gameOver: true };
       }
 
+      if (newHead.x === state.apple?.x && newHead.y === state.apple.y) {
+        const grownSnake = [...state.snake, newHead];
+        return {
+          ...state,
+          snake: grownSnake,
+          apple: spawnApple(grownSnake, action.rows, action.cols),
+        };
+      }
+
       return { ...state, snake: [...state.snake.slice(1), newHead] };
     }
 
