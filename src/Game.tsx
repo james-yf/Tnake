@@ -65,20 +65,22 @@ function reducer(state: GameState, action: GameAction): GameState {
       const offset = dirToOffset[currDir];
       const newHead = { x: currHead.x + offset.x, y: currHead.y + offset.y };
 
-      if (hitsWall(newHead, action.rows, action.cols)) {
+      const ate = newHead.x === state.apple?.x && newHead.y === state.apple.y;
+      const body = ate ? state.snake : state.snake.slice(1);
+
+      if (
+        hitsWall(newHead, action.rows, action.cols) ||
+        snakeExistsAt(newHead, body)
+      ) {
         return { ...state, gameOver: true };
       }
 
-      if (newHead.x === state.apple?.x && newHead.y === state.apple.y) {
-        const grownSnake = [...state.snake, newHead];
-        return {
-          ...state,
-          snake: grownSnake,
-          apple: spawnApple(grownSnake, action.rows, action.cols),
-        };
-      }
-
-      return { ...state, snake: [...state.snake.slice(1), newHead] };
+      const snake = [...body, newHead];
+      return {
+        ...state,
+        snake,
+        apple: ate ? spawnApple(snake, action.rows, action.cols) : state.apple,
+      };
     }
 
     case "CHANGE_DIR": {
@@ -107,8 +109,7 @@ function Game({ rows, cols, size }: GameProps) {
     if (!ctx) return;
     drawGrid(ctx, rows, cols, size, "#14532d", "#166534");
     drawSnake(ctx, size, state.snake, "blue");
-    if (!state.apple) return;
-    drawApple(ctx, size, state.apple, "red");
+    if (state.apple) drawApple(ctx, size, state.apple, "red");
   }, [state.snake, state.apple, rows, cols, size]);
 
   useEffect(() => {
